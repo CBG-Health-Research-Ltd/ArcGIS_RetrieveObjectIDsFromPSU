@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace ArcGIS_RetrieveObjectIDsFromPSU
 {
@@ -25,11 +26,13 @@ namespace ArcGIS_RetrieveObjectIDsFromPSU
 
             List<string> psuObjIdList = new List<string>();
             psuObjIdList = returnPSUObjIDStringList(queryPath);
-            int i = 0;
 
             string ObjectIDs = returnDesiredObjIds(qtrPsuList, psuObjIdList);
             string[] testarray = ObjectIDs.Split(',');
             File.WriteAllText(@"C:\Users\Surveyor\Desktop\objectIDs.txt", ObjectIDs);
+
+            //LOOKS LIKE GETTING +1 PSU -> ObjID THAN EXPECTED, SAVE ALL PSUs THAT HAVE CORRESPONDING OBJ ID AS A CSV COLUMN AND COMPARE TO THE RAW. SEE
+            //WHAT PSU IS UNEXPECTED
 
             if (testarray.Distinct().Count() != testarray.Count())
             {
@@ -46,14 +49,17 @@ namespace ArcGIS_RetrieveObjectIDsFromPSU
         {
             int count = 0;
             string ObjectIDs = null;
+            var psuCSV = new StringBuilder();
             foreach (string[] psuQtr in qtrPsuList)
             {
                 string psu = psuQtr[1]; //index where PSU number string is located.
                 foreach (string psuObj in psuObjIDList)
                 {
-                    if (psuObj.Contains(psu))
+                    if (psuObj.Contains("SamplingUnit : " + psu))
                     {
                         int psuIndex = psuObjIDList.IndexOf(psuObj);
+                        var newPSUline = string.Format("{0}", psu);
+                        psuCSV.AppendLine(newPSUline);
                         string objIDtemp = psuObjIDList[psuIndex + 1];
                         Console.WriteLine(psu + " corresponds to object ID: " + objIDtemp);
                         objIDtemp = objIDtemp.Replace("ObjectId : ", "");
@@ -62,6 +68,8 @@ namespace ArcGIS_RetrieveObjectIDsFromPSU
                     }
                 }
             }
+
+            File.WriteAllText(@"C:\Users\Surveyor\Desktop\OutputPSUs.csv", psuCSV.ToString());
 
             Console.WriteLine("Total ObjectIDs found: " + count.ToString());
 
